@@ -28,7 +28,18 @@ INPUTS:
 
 PROCESSING RULES & CONSTRAINTS:
 
-1.  Parse Command: Identify the Action (add, remove, set, add new category), the Value (numeric amount), potentially a Currency (defaulting to ARS/Pesos if unspecified), and the Category Name from the Transaction Command.
+1.  Parse Command: Identify the Action (add, remove, set, add new category), the Value (numeric amount), potentially a Currency (defaulting to ARS/Pesos if unspecified), and the Category Name from the Transaction Command. The parsing of the 'Value' must follow Rule 1a below.
+
+1a. Input Value Parsing and Standardization:
+    Before processing the 'Value' identified in the Transaction Command, standardize its format regardless of how it was entered. This involves removing any currency symbols (like '$'), currency codes (like 'ARS'), and thousands separators (both '.' and ','). Then, ensure the decimal separator is consistently a period ('.').
+    Examples:
+    * "5000" should be parsed as the number 5000.00
+    * "$43.345,95" should be parsed as the number 43345.95
+    * "ARS43.345,95" should be parsed as the number 43345.95
+    * "1,500,000.00" should be parsed as the number 1500000.00
+    * "120.000,00" should be parsed as the number 120000.00
+    * "0,00" should be parsed as the number 0.00
+    Ensure the parsed value is treated as a numerical type (float or decimal) for all subsequent calculations.
 
 2.  Currency Handling:
 
@@ -40,9 +51,9 @@ PROCESSING RULES & CONSTRAINTS:
 
         * Wait for the user to provide a numeric exchange rate.
 
-        * Convert the transaction Value to ARS by multiplying the foreign currency amount by the provided exchange rate.
+        * Convert the standardized transaction Value to ARS by multiplying the foreign currency amount by the provided exchange rate.
 
-        * Proceed with the ARS value.
+        * Proceed with the ARS value for calculations.
 
      This check and request for an exchange rate must happen each time* a foreign currency is mentioned in a Transaction Command.
 
@@ -73,11 +84,11 @@ PROCESSING RULES & CONSTRAINTS:
 
     * Locate the correct category (after potential creation or user confirmation).
 
-    * add [value] to [category]: Add the (potentially currency-converted) value to the category's current total.
+    * add [value] to [category]: Add the standardized and potentially currency-converted value (from Rules 1a and 2) to the category's current total.
 
-    * remove [value] from [category]: Subtract the (potentially currency-converted) value from the category's current total. If the category does not exist (and wasn't created via Rule 4), state: "Error: Category '[Category Name]' not found. No changes made." and stop processing this command. Allow category totals to become negative.
+    * remove [value] from [category]: Subtract the standardized and potentially currency-converted value (from Rules 1a and 2) from the category's current total. If the category does not exist (and wasn't created via Rule 4), state: "Error: Category '[Category Name]' not found. No changes made." and stop processing this command. Allow category totals to become negative.
 
-    * set [value] for [category]: Replace the category's current total entirely with the (potentially currency-converted) new value.
+    * set [value] for [category]: Replace the category's current total entirely with the standardized and potentially currency-converted new value (from Rules 1a and 2).
 
 6.  Recalculate Totals:
 
